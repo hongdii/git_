@@ -24,17 +24,6 @@ class MyApp extends StatefulWidget {
   final String title = 'untitled_app';
   MyAppState createState() => MyAppState();
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity:  VisualDensity.adaptivePlatformDensity,
-      ),
-      home: KakaoLogin(),
-    );
-  }
 }
 
 class KakaoLogin extends StatefulWidget {
@@ -66,7 +55,7 @@ class _KakaoLoginState extends State<KakaoLogin> {
       AccessTokenStore.instance.toString(token);
       print(token);
       Navigator.push(context, MaterialPageRoute(
-        builder: (context) => friends(),
+        builder: (context) => MoreScreen(),
       ));
     } catch (e) {
       print(e.toString());
@@ -84,10 +73,8 @@ class _KakaoLoginState extends State<KakaoLogin> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text('kakao login test'),
-        ),
+    return MaterialApp(
+      home: Scaffold(
         body: Center(
             child: InkWell(
               onTap: () async {
@@ -129,6 +116,7 @@ class _KakaoLoginState extends State<KakaoLogin> {
               ),
             )
         )
+    ),
     );
   }
 }
@@ -138,7 +126,7 @@ class AccessTokenStore {
 }
 
 class MyAppState extends State<MyApp> {
-  List<String> items = [];
+  List<Todo> todos = [];
   final myController = TextEditingController();
 
   @override
@@ -205,15 +193,18 @@ class MyAppState extends State<MyApp> {
                   RaisedButton(
                     child: Text('Add'),
                     onPressed: () {
-                      items.add(myController.text);
-                      setState((){});
+                      setState((){
+                        final todo = new Todo(myController.value.text);
+                        todos.add(todo);
+                        myController.clear();
+                      });
                     },
                     textColor: Colors.white,
                     color: Colors.lightGreen,
                   ),
                   Expanded(
                     child: ListView.builder(
-                        itemCount: items.length,
+                        itemCount: todos.length,
                         itemBuilder: (BuildContext context, int index){
                           return ListTile(
                             leading: Icon(
@@ -221,13 +212,15 @@ class MyAppState extends State<MyApp> {
                               color: Colors.black,
                             ),
                             trailing: Icon(Icons.search),
-                            title: Text(items[index]),
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => friends())
-                              );
-                            },
+
+                              title: Text(todos[index].toString()),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => DetailScreen(todo: todos[index]))
+                                );
+                              }
                           );
                         }
                     ),
@@ -352,4 +345,28 @@ class LoginState extends State<Login> {
       padding: EdgeInsets.only(left: 16),
     );
   }
+}
+
+class DetailScreen extends StatelessWidget {
+  final Todo todo;
+
+  // 생성자로 아이템을 수신하여 필드에 저장
+  const DetailScreen({Key? key, required this.todo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(todo.task)), // 아이템의 title로 title 구성
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(todo.task), // 아이템의 설명으로 body 구성
+      ),
+    );
+  }
+}
+
+class Todo{
+  final String task;
+
+  Todo(this.task);
 }
