@@ -1,21 +1,22 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:donut_1/MoreScreen.dart';
 import 'package:donut_1/friends.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_kakao_login/flutter_kakao_login.dart';
 import 'package:kakao_flutter_sdk/all.dart';
+import 'package:platform/platform.dart';
 
 void main() {
   KakaoContext.clientId = "cfc90a0a9f916d05a0a207404f0915df";
   KakaoContext.javascriptClientId = "ded66fc3f6bb090106a975f15fee7801";
 
   runApp(MaterialApp(
-    title: '로그인',
-    home: Scaffold(
-      appBar: AppBar(title: Text('로그인')),
-      body: Login(),
-
+    title: 'Flutter Demo',
+    theme: ThemeData(
+      primarySwatch: Colors.blue,
+      visualDensity:  VisualDensity.adaptivePlatformDensity,
     ),
+    home: KakaoLogin(),
   ));
 }
 
@@ -74,17 +75,8 @@ class _KakaoLoginState extends State<KakaoLogin> {
 
   _loginWithKakao() async {
     try {
-      var code = await AuthCodeClient.instance.request();
-      await _issueAccessToken(code);
-    } catch (e) {
-      print(e.toString());
-    }
-  }
-
-  _loginWithTalk() async {
-    try{
-      var code = await AuthCodeClient.instance.requestWithTalk();
-      await _issueAccessToken(code);
+      var token = await await UserApi.instance.loginWithKakaoAccount();
+      print("token : ${token.accessToken}");
     } catch (e) {
       print(e.toString());
     }
@@ -98,7 +90,20 @@ class _KakaoLoginState extends State<KakaoLogin> {
         ),
         body: Center(
             child: InkWell(
-              onTap: () => _isKakaoTalkInstalled ? _loginWithTalk : _loginWithKakao,
+              onTap: () async {
+                if(_isKakaoTalkInstalled) {
+                  try {
+                    final token = await UserApi.instance.loginWithKakaoTalk(prompts: [Prompt.LOGIN]);
+                    print(token.accessToken);
+                    User user = await UserApi.instance.me();
+                    print(user.kakaoAccount);
+                  }catch(e) {
+                    print('error : $e');
+                  }
+                }else {
+                  _loginWithKakao();
+                }
+              },
               child: Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: MediaQuery.of(context).size.height * 0.07,
@@ -120,7 +125,7 @@ class _KakaoLoginState extends State<KakaoLogin> {
                         ),
                       ),
                     ],
-                  )
+                  ),
               ),
             )
         )
@@ -253,7 +258,8 @@ class LoginState extends State<Login> {
         children: <Widget>[
           makeRowContainer('아이디', true),
           makeRowContainer('비밀번호', false),
-          Container(child: RaisedButton(
+          Container(
+            child: RaisedButton(
               child: Text('로그인', style: TextStyle(fontSize: 21)),
               onPressed: () {
                 // 사용자 이름과 비밀번호가 일치한다면!
